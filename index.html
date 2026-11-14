@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi itinerario de viaje</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f6f1e7; --card:#fffdf8; --ink:#1d2a2f; --muted:#5d6b70; --line:#d9d0bd; --accent:#b4410f; --ok:#0f766e; --warn:#a16207; --onaccent:#fff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#141b1e;--card:#1d272b;--ink:#ece7da;--muted:#a3b0b4;--line:#34434a;--accent:#f08a54;--ok:#4cc3b8;--warn:#e7b04a;--onaccent:#141b1e;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#141b1e;--card:#1d272b;--ink:#ece7da;--muted:#a3b0b4;--line:#34434a;--accent:#f08a54;--ok:#4cc3b8;--warn:#e7b04a;--onaccent:#141b1e;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.5 "DM Sans",system-ui,sans-serif}
+.wrap{max-width:46rem;margin:0 auto;padding:1.25rem}
+h1,h2{font-family:Fraunces,Georgia,serif;margin:0}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:.6rem .7rem;border:1.5px solid var(--line);border-radius:.5rem;background:var(--card)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+label{display:block;font-size:.85rem;font-weight:500;color:var(--muted);margin-bottom:.2rem}
+button{cursor:pointer;border:0;border-radius:.5rem;padding:.6rem 1rem;font-weight:700}
+.primary{background:var(--accent);color:var(--onaccent)}
+.ghost{background:transparent;border:1.5px solid var(--line)}
+.tripname{font-size:clamp(1.7rem,6vw,2.4rem);font-weight:800;border:0;border-bottom:2px dashed var(--line);border-radius:0;background:transparent;padding:.2rem 0;font-family:Fraunces,Georgia,serif}
+.stats{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}
+.stat{background:var(--card);border:1.5px solid var(--line);border-radius:.6rem;padding:.5rem .9rem;min-width:5.5rem}
+.stat b{display:block;font-size:1.4rem;font-family:Fraunces,Georgia,serif}
+.stat span{font-size:.8rem;color:var(--muted)}
+details.form{background:var(--card);border:1.5px solid var(--line);border-radius:.8rem;padding:.2rem 1rem;margin-bottom:1.5rem}
+details.form summary{cursor:pointer;font-weight:700;padding:.8rem 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:.4rem 0 1rem}
+.full{grid-column:1/-1}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding-bottom:1rem}
+.day{margin:1.8rem 0 .6rem;font-size:1.35rem;text-transform:capitalize}
+.item{display:grid;grid-template-columns:4.2rem 1fr;gap:.8rem;background:var(--card);border:1.5px solid var(--line);border-left:6px solid var(--accent);border-radius:.6rem;padding:.8rem;margin-bottom:.7rem;position:relative}
+.item.done{border-left-color:var(--ok)}
+.time{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:1.15rem;line-height:1.1}
+.time small{display:block;font-family:"DM Sans",sans-serif;font-weight:400;font-size:.75rem;color:var(--muted)}
+.kind{font-size:.8rem;color:var(--muted);font-weight:500}
+.title{font-weight:700;font-size:1.05rem}
+.meta{color:var(--muted);font-size:.9rem;word-break:break-word}
+.ref{display:inline-block;margin-top:.3rem;padding:.1rem .5rem;border:1.5px dashed var(--line);border-radius:.3rem;font-size:.85rem;font-weight:500}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;align-items:center}
+.row button{padding:.35rem .7rem;font-size:.85rem}
+.flag{color:var(--warn);font-weight:700;font-size:.85rem}
+.empty{text-align:center;padding:2rem 1rem;color:var(--muted);border:2px dashed var(--line);border-radius:.8rem}
+a.btn{display:inline-block;padding:.35rem .7rem;font-size:.85rem;font-weight:700;border:1.5px solid var(--accent);color:var(--accent);border-radius:.5rem;text-decoration:none}
+.trips{background:var(--card);border:1.5px solid var(--line);border-radius:.8rem;padding:.2rem 1rem;margin-bottom:1rem}
+.trips summary{cursor:pointer;font-weight:700;padding:.8rem 0}
+.trip{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.7rem 0;border-top:1px solid var(--line)}
+.trip.cur .tname{color:var(--accent)}
+.tname{font-weight:700}
+.badge{display:inline-block;font-size:.75rem;padding:.05rem .5rem;border-radius:1rem;border:1.5px solid var(--line);color:var(--muted)}
+.qrs{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.thumbs{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem}
+.thumb{position:relative}
+.thumb img{width:4.5rem;height:4.5rem;object-fit:contain;background:#fff;border:1.5px solid var(--line);border-radius:.4rem;display:block}
+.thumb button{position:absolute;top:-.45rem;right:-.45rem;width:1.7rem;height:1.7rem;padding:0;border-radius:50%;background:var(--accent);color:var(--onaccent);font-size:.85rem;line-height:1}
+.qrbtn{display:block;padding:0;border:1.5px solid var(--line);border-radius:.4rem;background:#fff;width:5.5rem;height:5.5rem;overflow:hidden}
+.qrbtn img{width:100%;height:100%;object-fit:contain;display:block}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow:auto;gap:1rem;padding:1rem;z-index:20}
+.modal[hidden]{display:none}
+.modal img{width:min(100%,40rem);height:auto;background:#fff;border-radius:.5rem;padding:.5rem}
+.modal p{color:#fff;margin:0;text-align:center}
+@media (max-width:30rem){.grid{grid-template-columns:1fr}.item{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin-bottom:.5rem"><button class="primary" id="newTrip">+ Nuevo viaje</button><select id="lang" aria-label="Idioma / Language" style="width:auto"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="it">Italiano</option></select></div>
+  <details class="trips" id="tripsBox"><summary id="tripsTitle">Mis viajes</summary><div id="tripsList"></div><div class="actions"><button class="ghost" id="exportBtn">Guardar copia</button><button class="ghost" id="importBtn">Restaurar copia</button><input id="importFile" type="file" accept="application/json,.json" hidden></div><div id="tmsg" class="flag" role="alert" style="padding-bottom:.8rem"></div></details>
+  <input id="tripName" class="tripname" aria-label="Nombre del viaje" placeholder="Nombre de tu viaje">
+  <div class="stats" id="stats"></div>
+
+  <details class="form" id="formBox" open>
+    <summary id="formTitle">Agregar al itinerario</summary>
+    <div class="grid">
+      <div><label for="type">Tipo</label><select id="type"></select></div>
+      <div><label for="title">Descripción</label><input id="title" placeholder="Ej.: Vuelo Miami – Madrid"></div>
+      <div><label for="date">Fecha</label><input id="date" type="date"></div>
+      <div><label for="time">Hora</label><input id="time" type="time"></div>
+      <div><label for="end">Hora de fin (opcional)</label><input id="end" type="time"></div>
+      <div><label for="place">Lugar</label><input id="place" placeholder="Aeropuerto, teatro, hotel..."></div>
+      <div class="full"><label for="ref">Código de reserva o ticket</label><input id="ref" placeholder="Ej.: ABC123"></div>
+      <div><label for="origin">Origen (traslados)</label><input id="origin" placeholder="Hotel, estación..."></div>
+      <div><label for="dest">Destino (traslados)</label><input id="dest" placeholder="Teatro, aeropuerto..."></div>
+      <div><label for="mode">Cómo moverte</label><select id="mode"><option value="transit">Transporte público / tren</option><option value="walking">A pie</option><option value="driving">Auto / taxi</option><option value="bicycling">Bicicleta</option></select></div>
+      <div><label for="line">Tren o línea y hora de salida</label><input id="line" placeholder="Ej.: Línea 2, sale 09:15"></div>
+      <div class="full"><label for="notes">Notas</label><textarea id="notes" rows="2" placeholder="Puerta, asiento, contacto del chofer..."></textarea></div>
+      <div class="full"><label for="qrfile">Códigos QR (imágenes o PDF de pasabordos o tickets; puedes elegir varios)</label><input id="qrfile" type="file" accept="image/*,application/pdf" multiple><div id="qrprev" class="thumbs"></div></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="save">Guardar</button>
+      <button class="ghost" id="cancel" hidden>Cancelar edición</button>
+      <span id="msg" class="flag" role="alert"></span>
+    </div>
+  </details>
+
+  <div id="list"></div>
+  <div class="modal" id="qrmodal" hidden><img id="qrimg" alt="Código QR ampliado"><p id="qrcap"></p><p>Sube el brillo de la pantalla para escanearlo.</p><button class="primary" id="qrclose">Cerrar</button></div>
+</div>
+
+<script>
+const TYPES={vuelo:['✈️','Pasaje / vuelo'],traslado:['🚐','Traslado'],hotel:['🏨','Alojamiento'],entrada:['🎟️','Entrada / espectáculo'],comida:['🍽️','Comida'],actividad:['📍','Actividad']};
+const KEY='itinerario-viaje-v1';
+let db={trips:[],cur:null};
+let state=null;
+function newTrip(name){return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name||'',items:[],created:Date.now()}}
+let editing=null;
+try{const s0=localStorage.getItem(KEY);if(s0){const p=JSON.parse(s0);
+  if(p&&Array.isArray(p.trips)){db.trips=p.trips.filter(t=>t&&Array.isArray(t.items));db.cur=p.cur}
+  else if(p&&Array.isArray(p.items)){const t0=newTrip(p.name);t0.items=p.items;db.trips=[t0];db.cur=t0.id}}}catch(e){}
+if(!db.trips.length){const t0=newTrip('');db.trips=[t0];db.cur=t0.id}
+state=db.trips.find(t=>t.id===db.cur)||db.trips[0];
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({trips:db.trips,cur:state.id}))}catch(e){msg('No se pudo guardar: el almacenamiento del navegador está lleno. Elimina alguna imagen o reserva.')}}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+$('type').innerHTML=Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v[0]} ${v[1]}</option>`).join('');
+const LANGS=['es','en','pt','fr','it'];
+const LOC={es:'es',en:'en-US',pt:'pt-BR',fr:'fr',it:'it'};
+const D={
+'Nombre de tu viaje':['Name of your trip','Nome da sua viagem','Nom de votre voyage','Nome del tuo viaggio'],
+'Agregar al itinerario':['Add to itinerary','Adicionar ao roteiro','Ajouter à l’itinéraire','Aggiungi all’itinerario'],
+'Editando':['Editing','Editando','Modification','Modifica'],
+'Tipo':['Type','Tipo','Type','Tipo'],
+'Descripción':['Description','Descrição','Description','Descrizione'],
+'Ej.: Vuelo Miami – Madrid':['E.g. Flight Miami – Madrid','Ex.: Voo Miami – Madri','Ex. : Vol Miami – Madrid','Es.: Volo Miami – Madrid'],
+'Fecha':['Date','Data','Date','Data'],
+'Hora':['Time','Hora','Heure','Ora'],
+'Hora de fin (opcional)':['End time (optional)','Hora de término (opcional)','Heure de fin (facultatif)','Ora di fine (facoltativo)'],
+'Lugar':['Place','Local','Lieu','Luogo'],
+'Aeropuerto, teatro, hotel...':['Airport, theater, hotel...','Aeroporto, teatro, hotel...','Aéroport, théâtre, hôtel...','Aeroporto, teatro, hotel...'],
+'Código de reserva o ticket':['Booking or ticket code','Código da reserva ou do ingresso','Code de réservation ou de billet','Codice di prenotazione o biglietto'],
+'Origen (traslados)':['From (transfers)','Origem (traslados)','Départ (transferts)','Partenza (trasferimenti)'],
+'Hotel, estación...':['Hotel, station...','Hotel, estação...','Hôtel, gare...','Hotel, stazione...'],
+'Destino (traslados)':['To (transfers)','Destino (traslados)','Arrivée (transferts)','Arrivo (trasferimenti)'],
+'Teatro, aeropuerto...':['Theater, airport...','Teatro, aeroporto...','Théâtre, aéroport...','Teatro, aeroporto...'],
+'Cómo moverte':['How to get there','Como se deslocar','Comment se déplacer','Come spostarti'],
+'Transporte público / tren':['Public transit / train','Transporte público / trem','Transports en commun / train','Mezzi pubblici / treno'],
+'A pie':['On foot','A pé','À pied','A piedi'],
+'Auto / taxi':['Car / taxi','Carro / táxi','Voiture / taxi','Auto / taxi'],
+'Bicicleta':['Bicycle','Bicicleta','Vélo','Bicicletta'],
+'Tren o línea y hora de salida':['Train or line and departure time','Trem ou linha e horário de saída','Train ou ligne et heure de départ','Treno o linea e orario di partenza'],
+'Ej.: Línea 2, sale 09:15':['E.g. Line 2, departs 09:15','Ex.: Linha 2, sai às 09:15','Ex. : Ligne 2, départ 09:15','Es.: Linea 2, parte alle 09:15'],
+'Notas':['Notes','Notas','Notes','Note'],
+'Puerta, asiento, contacto del chofer...':['Gate, seat, driver contact...','Portão, assento, contato do motorista...','Porte, siège, contact du chauffeur...','Gate, posto, contatto dell’autista...'],
+'Códigos QR (imágenes o PDF de pasabordos o tickets; puedes elegir varios)':['QR codes (images or PDFs of boarding passes or tickets; you can pick several)','Códigos QR (imagens ou PDFs de cartões de embarque ou ingressos; você pode escolher vários)','Codes QR (images ou PDF de cartes d’embarquement ou de billets ; vous pouvez en choisir plusieurs)','Codici QR (immagini o PDF di carte d’imbarco o biglietti; puoi sceglierne diversi)'],
+'Quitar':['Remove','Remover','Retirer','Rimuovi'],
+'Solo se guardan las primeras 8 páginas de cada PDF.':['Only the first 8 pages of each PDF are saved.','Somente as 8 primeiras páginas de cada PDF são salvas.','Seules les 8 premières pages de chaque PDF sont enregistrées.','Vengono salvate solo le prime 8 pagine di ogni PDF.'],
+'Página del PDF que tiene el QR':['PDF page with the QR','Página do PDF com o QR','Page du PDF contenant le QR','Pagina del PDF con il QR'],
+'Guardar':['Save','Salvar','Enregistrer','Salva'],
+'Cancelar edición':['Cancel editing','Cancelar edição','Annuler la modification','Annulla modifica'],
+'Sube el brillo de la pantalla para escanearlo.':['Turn up the screen brightness to scan it.','Aumente o brilho da tela para escaneá-lo.','Augmentez la luminosité de l’écran pour le scanner.','Aumenta la luminosità dello schermo per scansionarlo.'],
+'Cerrar':['Close','Fechar','Fermer','Chiudi'],
+'Pasaje / vuelo':['Ticket / flight','Passagem / voo','Billet / vol','Biglietto / volo'],
+'Traslado':['Transfer','Traslado','Transfert','Trasferimento'],
+'Alojamiento':['Lodging','Hospedagem','Hébergement','Alloggio'],
+'Entrada / espectáculo':['Ticket / show','Ingresso / espetáculo','Billet / spectacle','Biglietto / spettacolo'],
+'Comida':['Meal','Refeição','Repas','Pasto'],
+'Actividad':['Activity','Atividade','Activité','Attività'],
+'días':['days','dias','jours','giorni'],
+'reservas':['bookings','reservas','réservations','prenotazioni'],
+'confirmadas':['confirmed','confirmadas','confirmées','confermate'],
+'pendientes':['pending','pendentes','en attente','in sospeso'],
+'Tu itinerario está vacío. Agrega tu primer pasaje, traslado o entrada.':['Your itinerary is empty. Add your first ticket, transfer or admission.','Seu roteiro está vazio. Adicione sua primeira passagem, traslado ou ingresso.','Votre itinéraire est vide. Ajoutez votre premier billet, transfert ou entrée.','Il tuo itinerario è vuoto. Aggiungi il primo biglietto, trasferimento o ingresso.'],
+'Cargar un ejemplo':['Load an example','Carregar um exemplo','Charger un exemple','Carica un esempio'],
+'Sin fecha':['No date','Sem data','Sans date','Senza data'],
+'hasta':['until','até','jusqu’à','fino alle'],
+'Se superpone con otra actividad':['Overlaps with another activity','Sobrepõe-se a outra atividade','Chevauche une autre activité','Si sovrappone a un’altra attività'],
+'✓ Confirmado':['✓ Confirmed','✓ Confirmado','✓ Confirmé','✓ Confermato'],
+'Marcar confirmado':['Mark as confirmed','Marcar como confirmado','Marquer comme confirmé','Segna come confermato'],
+'Editar':['Edit','Editar','Modifier','Modifica'],
+'Eliminar':['Delete','Excluir','Supprimer','Elimina'],
+'¿Seguro? Toca otra vez':['Sure? Tap again','Tem certeza? Toque de novo','Sûr ? Touchez encore','Sicuro? Tocca ancora'],
+'Ver código QR':['View QR code','Ver código QR','Voir le code QR','Vedi codice QR'],
+'Código QR de':['QR code for','Código QR de','Code QR de','Codice QR di'],
+'Ver ruta y horarios':['View route and schedules','Ver rota e horários','Voir l’itinéraire et les horaires','Vedi percorso e orari'],
+'Ruta desde mi ubicación':['Route from my location','Rota a partir da minha localização','Itinéraire depuis ma position','Percorso dalla mia posizione'],
+'Escribe una descripción (por ejemplo: Vuelo Miami – Madrid).':['Enter a description (for example: Flight Miami – Madrid).','Escreva uma descrição (por exemplo: Voo Miami – Madri).','Saisissez une description (par exemple : Vol Miami – Madrid).','Scrivi una descrizione (ad esempio: Volo Miami – Madrid).'],
+'Elige una fecha.':['Pick a date.','Escolha uma data.','Choisissez une date.','Scegli una data.'],
+'No se pudo guardar: el almacenamiento del navegador está lleno. Elimina alguna imagen o reserva.':['Could not save: browser storage is full. Delete an image or booking.','Não foi possível salvar: o armazenamento do navegador está cheio. Exclua uma imagem ou reserva.','Enregistrement impossible : le stockage du navigateur est plein. Supprimez une image ou une réservation.','Impossibile salvare: la memoria del browser è piena. Elimina un’immagine o una prenotazione.'],
+'No se pudo leer esa imagen.':['Could not read that image.','Não foi possível ler essa imagem.','Impossible de lire cette image.','Impossibile leggere questa immagine.'],
+'No se pudo cargar el lector de PDF. Sube una captura de pantalla del QR.':['Could not load the PDF reader. Upload a screenshot of the QR.','Não foi possível carregar o leitor de PDF. Envie uma captura de tela do QR.','Impossible de charger le lecteur PDF. Importez une capture d’écran du QR.','Impossibile caricare il lettore PDF. Carica uno screenshot del QR.'],
+'No se pudo leer ese PDF. Prueba con una captura de pantalla.':['Could not read that PDF. Try a screenshot.','Não foi possível ler esse PDF. Tente uma captura de tela.','Impossible de lire ce PDF. Essayez une capture d’écran.','Impossibile leggere questo PDF. Prova con uno screenshot.'],
+'✓ Imagen guardada en este registro':['✓ Image saved with this entry','✓ Imagem salva neste registro','✓ Image enregistrée avec cette entrée','✓ Immagine salvata in questa voce'],
+'Procesando PDF...':['Processing PDF...','Processando PDF...','Traitement du PDF...','Elaborazione del PDF...'],
+'✓ Página':['✓ Page','✓ Página','✓ Page','✓ Pagina'],
+'guardada como imagen':['saved as image','salva como imagem','enregistrée comme image','salvata come immagine'],
+'Mis viajes':['My trips','Minhas viagens','Mes voyages','I miei viaggi'],
+'+ Nuevo viaje':['+ New trip','+ Nova viagem','+ Nouveau voyage','+ Nuovo viaggio'],
+'Abrir':['Open','Abrir','Ouvrir','Apri'],
+'Abierto':['Current','Atual','Affiché','Aperto'],
+'Pasado':['Past','Passada','Passé','Passato'],
+'Próximo':['Upcoming','Próxima','À venir','Prossimo'],
+'En curso':['In progress','Em andamento','En cours','In corso'],
+'Sin fechas':['No dates','Sem datas','Sans dates','Senza date'],
+'Viaje sin nombre':['Untitled trip','Viagem sem nome','Voyage sans nom','Viaggio senza nome'],
+'Guardar copia':['Save backup','Salvar cópia','Enregistrer une copie','Salva copia'],
+'Restaurar copia':['Restore backup','Restaurar cópia','Restaurer une copie','Ripristina copia'],
+'No se pudo crear la copia.':['Could not create the backup.','Não foi possível criar a cópia.','Impossible de créer la copie.','Impossibile creare la copia.'],
+'No se pudo leer ese archivo de copia.':['Could not read that backup file.','Não foi possível ler esse arquivo de cópia.','Impossible de lire ce fichier de copie.','Impossibile leggere questo file di copia.'],
+'✓ Viajes importados:':['✓ Trips imported:','✓ Viagens importadas:','✓ Voyages importés :','✓ Viaggi importati:'],
+'Mi itinerario de viaje':['My trip itinerary','Meu roteiro de viagem','Mon itinéraire de voyage','Il mio itinerario di viaggio']
+};
+let lang='es';
+try{const s=localStorage.getItem('itinerario-lang');if(LANGS.includes(s))lang=s;else{const n=(navigator.language||'es').slice(0,2);if(LANGS.includes(n))lang=n}}catch(e){}
+function tr(s){if(lang==='es')return s;const x=D[s];return (x&&x[LANGS.indexOf(lang)-1])||s}
+function buildTypes(){const v=$('type').value;$('type').innerHTML=Object.entries(TYPES).map(([k,x])=>`<option value="${k}">${x[0]} ${esc(tr(x[1]))}</option>`).join('');if(v)$('type').value=v}
+function applyLang(){
+  document.documentElement.lang=lang;document.title=tr('Mi itinerario de viaje');
+  document.querySelectorAll('label,#save,#cancel,#qrclose,#newTrip,#exportBtn,#importBtn,#mode option,#qrmodal p:not(#qrcap)').forEach(el=>{if(el.dataset.es===undefined)el.dataset.es=el.textContent;el.textContent=tr(el.dataset.es)});
+  const PH={tripName:'Nombre de tu viaje',title:'Ej.: Vuelo Miami – Madrid',place:'Aeropuerto, teatro, hotel...',origin:'Hotel, estación...',dest:'Teatro, aeropuerto...',line:'Ej.: Línea 2, sale 09:15',notes:'Puerta, asiento, contacto del chofer...'};
+  for(const id in PH)$(id).placeholder=tr(PH[id]);
+  $('tripName').setAttribute('aria-label',tr('Nombre de tu viaje'));
+  buildTypes();
+  $('formTitle').textContent=tr(editing?'Editando':'Agregar al itinerario');
+  render();
+}
+$('lang').value=lang;
+$('lang').addEventListener('change',e=>{lang=e.target.value;try{localStorage.setItem('itinerario-lang',lang)}catch(err){}applyLang()});
+applyLang();
+$('tripName').value=state.name||'';
+$('date').value=new Date().toLocaleDateString('sv-SE');
+$('tripName').addEventListener('input',e=>{state.name=e.target.value;persist();renderTrips()});
+
+function mins(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m}
+function fmtDay(d){const[y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd).toLocaleDateString(LOC[lang],{weekday:'long',day:'numeric',month:'long'})}
+function overlaps(a,b){const a1=mins(a.time),a2=mins(a.end),b1=mins(b.time),b2=mins(b.end);
+  return a1!=null&&a2!=null&&b1!=null&&b2!=null&&a1<b2&&b1<a2}
+
+function mapLink(i){
+  const d=i.dest||i.place;
+  if(!d)return '';
+  const q=new URLSearchParams({api:'1',destination:d,travelmode:i.mode||'transit'});
+  if(i.origin)q.set('origin',i.origin);
+  const label=i.origin?'🗺 '+tr('Ver ruta y horarios'):'🗺 '+tr('Ruta desde mi ubicación');
+  return `<a class="btn" href="${esc('https://www.google.com/maps/dir/?'+q.toString())}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+}
+function render(){renderTrips();
+  const items=[...state.items].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'99:99').localeCompare(b.time||'99:99'));
+  const days=new Set(items.map(i=>i.date)).size;
+  const done=items.filter(i=>i.done).length;
+  $('stats').innerHTML=`<div class="stat"><b>${days}</b><span>${tr('días')}</span></div><div class="stat"><b>${items.length}</b><span>${tr('reservas')}</span></div><div class="stat"><b>${done}</b><span>${tr('confirmadas')}</span></div><div class="stat"><b>${items.length-done}</b><span>${tr('pendientes')}</span></div>`;
+  if(!items.length){
+    $('list').innerHTML=`<div class="empty"><p>${esc(tr('Tu itinerario está vacío. Agrega tu primer pasaje, traslado o entrada.'))}</p><button class="ghost" id="demo">${esc(tr('Cargar un ejemplo'))}</button></div>`;
+    $('demo').onclick=loadDemo;return;
+  }
+  let html='',cur=null;
+  items.forEach(i=>{
+    if(i.date!==cur){cur=i.date;html+=`<h2 class="day">${i.date?esc(fmtDay(i.date)):esc(tr('Sin fecha'))}</h2>`}
+    const t=TYPES[i.type]||TYPES.actividad;
+    const clash=items.some(o=>o.id!==i.id&&o.date===i.date&&overlaps(i,o));
+    html+=`<article class="item ${i.done?'done':''}">
+      <div class="time">${esc(i.time||'—')}${i.end?`<small>${esc(tr('hasta'))} ${esc(i.end)}</small>`:''}</div>
+      <div>
+        <div class="kind">${t[0]} ${esc(tr(t[1]))}</div>
+        <div class="title">${esc(i.title)}</div>
+        ${i.place?`<div class="meta">${esc(i.place)}</div>`:''}
+        ${i.origin||i.dest?`<div class="meta">${esc(i.origin||'')} → ${esc(i.dest||'')}</div>`:''}
+        ${i.line?`<div class="meta">🚆 ${esc(i.line)}</div>`:''}
+        ${i.notes?`<div class="meta">${esc(i.notes)}</div>`:''}
+        ${i.ref?`<span class="ref">${esc(i.ref)}</span>`:''}
+        ${qrList(i).length?`<div class="qrs">${qrList(i).map((s,k)=>`<button class="qrbtn" data-act="qr" data-id="${i.id}" data-k="${k}" aria-label="${esc(tr('Ver código QR'))} ${k+1}"><img src="${s}" alt="${esc(tr('Código QR de'))} ${esc(i.title)} ${k+1}"></button>`).join('')}</div>`:''}
+        ${clash?'<div class="flag">⚠ '+esc(tr('Se superpone con otra actividad'))+'</div>':''}
+        <div class="row">
+          ${mapLink(i)}
+          <button class="ghost" data-act="done" data-id="${i.id}">${i.done?tr('✓ Confirmado'):tr('Marcar confirmado')}</button>
+          <button class="ghost" data-act="edit" data-id="${i.id}">${tr('Editar')}</button>
+          <button class="ghost" data-act="del" data-id="${i.id}">${tr('Eliminar')}</button>
+        </div>
+      </div></article>`;
+  });
+  $('list').innerHTML=html;
+}
+
+$('list').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-act]');if(!b)return;
+  const it=state.items.find(i=>i.id===b.dataset.id);if(!it)return;
+  if(b.dataset.act==='qr'){const L=qrList(it),k=+b.dataset.k||0;$('qrimg').src=L[k];$('qrcap').textContent=it.title+(L.length>1?' ('+(k+1)+'/'+L.length+')':'');$('qrmodal').hidden=false;return}
+  if(b.dataset.act==='done'){it.done=!it.done;persist();render()}
+  if(b.dataset.act==='del'){if(b.dataset.sure){state.items=state.items.filter(i=>i.id!==it.id);persist();render()}else{b.dataset.sure='1';b.textContent=tr('¿Seguro? Toca otra vez');setTimeout(()=>{b.dataset.sure='';b.textContent=tr('Eliminar')},3000)}}
+  if(b.dataset.act==='edit'){
+    editing=it.id;
+    ['type','title','date','time','end','place','ref','notes','origin','dest','mode','line'].forEach(f=>$(f).value=it[f]||'');
+    if(!$('mode').value)$('mode').value='transit';
+    pendingQrs=qrList(it).slice();showPrev();
+    $('formTitle').textContent=tr('Editando');$('cancel').hidden=false;$('formBox').open=true;
+    $('formBox').scrollIntoView({behavior:'smooth'});
+  }
+});
+
+function msg(s){$('msg').textContent=s?tr(s):'';if(s)$('formBox').open=true}
+let pendingQrs=[];
+function qrList(i){return Array.isArray(i.qrs)?i.qrs:(i.qr?[i.qr]:[])}
+function showPrev(){
+  $('qrprev').innerHTML=pendingQrs.map((s,k)=>`<span class="thumb"><img src="${s}" alt=""><button type="button" data-rm="${k}" aria-label="${esc(tr('Quitar'))}">✕</button></span>`).join('');
+}
+$('qrprev').addEventListener('click',e=>{const b=e.target.closest('button[data-rm]');if(!b)return;pendingQrs.splice(+b.dataset.rm,1);showPrev()});
+function toJpeg(src,w,h,max,q){
+  const k=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',q);
+}
+function readImage(f){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>ok(toJpeg(im,im.width,im.height,900,0.85));im.onerror=no;im.src=r.result};r.onerror=no;r.readAsDataURL(f)})}
+async function readPdf(f){
+  if(!window.pdfjsLib)throw new Error('nopdf');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+  const out=[],n=Math.min(doc.numPages,8);
+  for(let p=1;p<=n;p++){
+    const page=await doc.getPage(p);
+    const v0=page.getViewport({scale:1});
+    const v=page.getViewport({scale:1400/Math.max(v0.width,v0.height)});
+    const c=document.createElement('canvas');c.width=Math.round(v.width);c.height=Math.round(v.height);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:x,viewport:v}).promise;
+    out.push(c.toDataURL('image/jpeg',0.8));
+  }
+  return {pages:out,more:doc.numPages>n};
+}
+$('qrfile').addEventListener('change',async e=>{
+  const files=[...e.target.files];e.target.value='';
+  if(!files.length)return;
+  let note='';
+  for(const f of files){
+    const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+    try{
+      if(isPdf){msg('Procesando PDF...');const r=await readPdf(f);pendingQrs.push(...r.pages);if(r.more)note='Solo se guardan las primeras 8 páginas de cada PDF.'}
+      else pendingQrs.push(await readImage(f));
+      showPrev();
+    }catch(err){
+      note=err&&err.message==='nopdf'?'No se pudo cargar el lector de PDF. Sube una captura de pantalla del QR.':(isPdf?'No se pudo leer ese PDF. Prueba con una captura de pantalla.':'No se pudo leer esa imagen.');
+    }
+  }
+  msg(note);
+});
+$('qrclose').onclick=()=>{$('qrmodal').hidden=true};
+$('qrmodal').addEventListener('click',e=>{if(e.target.id==='qrmodal')$('qrmodal').hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('qrmodal').hidden=true});
+
+function todayISO(){return new Date().toLocaleDateString('sv-SE')}
+function tripInfo(t){
+  const ds=t.items.map(i=>i.date).filter(Boolean).sort();
+  const a=ds[0],b=ds[ds.length-1],td=todayISO();
+  return {a,b,st:!a?'Sin fechas':b<td?'Pasado':a>td?'Próximo':'En curso'};
+}
+function fmtShort(d){const[y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd).toLocaleDateString(LOC[lang],{day:'numeric',month:'short',year:'numeric'})}
+function tmsg(s,n){$('tmsg').textContent=s?tr(s)+(n!=null?' '+n:''):'';if(s)$('tripsBox').open=true}
+function renderTrips(){
+  $('tripsTitle').textContent=tr('Mis viajes')+' ('+db.trips.length+')';
+  const rows=db.trips.map(t=>({t,i:tripInfo(t)})).sort((x,y)=>(y.i.a||'9999').localeCompare(x.i.a||'9999'));
+  $('tripsList').innerHTML=rows.map(({t,i})=>{
+    const cur=t.id===state.id;
+    const range=i.a?esc(fmtShort(i.a))+(i.b!==i.a?' – '+esc(fmtShort(i.b)):'')+' · ':'';
+    return `<div class="trip ${cur?'cur':''}"><div><div class="tname">${esc(t.name||tr('Viaje sin nombre'))}</div><div class="meta">${range}${t.items.length} ${esc(tr('reservas'))} · <span class="badge">${esc(tr(i.st))}</span></div></div><div class="row" style="margin:0">${cur?`<span class="badge">${esc(tr('Abierto'))}</span>`:`<button class="ghost" data-trip="open" data-id="${t.id}">${esc(tr('Abrir'))}</button>`}<button class="ghost" data-trip="del" data-id="${t.id}">${esc(tr('Eliminar'))}</button></div></div>`;
+  }).join('');
+}
+$('tripsList').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-trip]');if(!b)return;
+  const id=b.dataset.id;
+  if(b.dataset.trip==='open'){
+    state=db.trips.find(t=>t.id===id)||state;persist();resetForm();$('tripName').value=state.name||'';render();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }else if(b.dataset.sure){
+    db.trips=db.trips.filter(t=>t.id!==id);
+    if(!db.trips.length)db.trips.push(newTrip(''));
+    if(state.id===id){state=db.trips[0];$('tripName').value=state.name||''}
+    persist();render();
+  }else{
+    b.dataset.sure='1';b.textContent=tr('¿Seguro? Toca otra vez');
+    setTimeout(()=>{b.dataset.sure='';b.textContent=tr('Eliminar')},3000);
+  }
+});
+$('newTrip').onclick=()=>{const t=newTrip('');db.trips.push(t);state=t;persist();resetForm();$('tripName').value='';render();$('tripName').focus()};
+$('exportBtn').onclick=()=>{
+  try{
+    const blob=new Blob([JSON.stringify({app:'itinerarios',v:1,trips:db.trips})],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-viajes.json';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);tmsg('');
+  }catch(err){tmsg('No se pudo crear la copia.')}
+};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const p=JSON.parse(await f.text());
+    if(!p||!Array.isArray(p.trips))throw new Error('bad');
+    let n=0;
+    p.trips.forEach(t=>{
+      if(!t||!Array.isArray(t.items))return;
+      if(!t.id)t.id=newTrip('').id;
+      const k=db.trips.findIndex(x=>x.id===t.id);
+      if(k>=0)db.trips[k]=t;else db.trips.push(t);
+      n++;
+    });
+    if(!n)throw new Error('bad');
+    state=db.trips.find(t=>t.id===state.id)||db.trips[0];
+    persist();$('tripName').value=state.name||'';render();tmsg('✓ Viajes importados:',n);
+  }catch(err){tmsg('No se pudo leer ese archivo de copia.')}
+});
+function resetForm(){pendingQrs=[];$('qrfile').value='';showPrev();
+  editing=null;
+  ['title','time','end','place','ref','notes','origin','dest','line'].forEach(f=>$(f).value='');$('mode').value='transit';
+  $('formTitle').textContent=tr('Agregar al itinerario');$('cancel').hidden=true;
+}
+$('cancel').onclick=resetForm;
+$('save').onclick=()=>{
+  const title=$('title').value.trim();
+  if(!title){msg('Escribe una descripción (por ejemplo: Vuelo Miami – Madrid).');$('title').focus();return}
+  if(!$('date').value){msg('Elige una fecha.');return}
+  msg('');
+  const data={type:$('type').value,title,date:$('date').value,time:$('time').value,end:$('end').value,place:$('place').value.trim(),ref:$('ref').value.trim(),notes:$('notes').value.trim(),origin:$('origin').value.trim(),dest:$('dest').value.trim(),mode:$('mode').value,line:$('line').value.trim(),qrs:pendingQrs.slice()};
+  if(editing){const it0=state.items.find(i=>i.id===editing);Object.assign(it0,data);delete it0.qr}
+  else{state.items.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),done:false,...data})}
+  persist();resetForm();render();
+  if(!$('msg').textContent){$('formBox').open=false;$('stats').scrollIntoView({behavior:'smooth'})}
+};
+
+function loadDemo(){
+  const d=[['vuelo','Vuelo Miami – Madrid','2026-12-10','18:30','','Aeropuerto MIA','IB6124'],
+   ['traslado','Traslado al hotel','2026-12-11','09:00','10:00','Aeropuerto Barajas','Chofer: Luis'],
+   ['entrada','Espectáculo de flamenco','2026-12-11','21:00','22:30','Tablao Las Tablas','TKT-88421'],
+   ['comida','Cena de bienvenida','2026-12-11','22:00','23:00','Centro de Madrid','']];
+  state.name=state.name||'Viaje a Madrid';$('tripName').value=state.name;
+  d.forEach(x=>state.items.push({id:Math.random().toString(36).slice(2,9),done:false,type:x[0],title:x[1],date:x[2],time:x[3],end:x[4],place:x[5],ref:x[6],notes:''}));
+  persist();render();
+}
+render();
+</script>
+</body>
+</html>
